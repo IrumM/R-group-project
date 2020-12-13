@@ -630,16 +630,16 @@ vac_bev_plot <- vac_bev_plot %>%
 
 vac_bev_plot$perc <- as.character(round(vac_bev_plot$prop, 3 ) * 100 )
 vac_bev_plot$lab <- paste(vac_bev_plot$num,
-                          paste( "(", vac_bev_plot$perc, "%", sep = ""),
+                          paste( " (", vac_bev_plot$perc, "%", sep = ""),
                           sep = "", ")")
 
-ggplot(vac_bev_plot, aes( x = Gender, y = prop ) ) + 
+ggplot(vac_bev_plot, aes( x = Gender, y = prop ) ) +
   geom_bar( stat = "identity", width = 0.3 ) +
   coord_flip() +
   ylim( 0 , 1 ) +
   geom_text( aes( x = Gender, y = prop, label = lab ),
              size = 3.5, vjust = .5, hjust = -.3 ) +
-  labs(x = "Gender", 
+  labs(x = "Gender",
        y = "Proportion",
        title = "Gender Proportion",
        subtitle = "Proprotion by Gender surveyed") +
@@ -673,8 +673,7 @@ plot_ly(
   color= ~Age,
   type="bar"
 ) %>%
-  layout(barmode="stack",
-           title="Vaccination Trends by Scocial Media Influence, 2001-2018",
+  layout(title="Vaccination Trends by Scocial Media Influence, 2001-2018",
     yaxis=list(title="Proportion by Age"),
     xaxis=list(title="Social Media Preference"),
     paper_bgcolor="azure",
@@ -696,16 +695,29 @@ vac_bev_plot3 <- vac_bev_USA %>%
   group_by(Influene_ofSM_Info, Most_trusted_with_Immunization_Info) %>%
   summarize( Count = n() )
 
-plot_ly(
-  vac_bev_plot3,
-  x= ~Most_trusted_with_Immunization_Info,
-  y= ~Count,
-  color= ~Count,
+
+vac_bev_plot3 <- vac_bev_plot3 %>%
+  mutate(Most_trusted_with_Immunization_Info = factor(Most_trusted_with_Immunization_Info,
+                         levels = Most_trusted_with_Immunization_Info[order( Count)]))
+
+vac_bev_plot3$total <- sum( vac_bev_plot3$Count)
+vac_bev_plot3$prop <- vac_bev_plot3$Count / vac_bev_plot3$total
+
+vac_bev_plot3$perc <- as.character(round(vac_bev_plot3$prop, 3 ) * 100 )
+  vac_bev_plot3$lab <- paste(vac_bev_plot3$Count,
+                          paste( " (", vac_bev_plot3$perc, "%", sep = ""),
+                          sep = "", ")")
+
+ plot_ly(
+   vac_bev_plot3,
+   x= ~Most_trusted_with_Immunization_Info,
+  y= ~prop,
+  color= ~Most_trusted_with_Immunization_Info,
   type="bar"
 ) %>%
   layout(barmode="stack",
            title="Resources most trusted with Vaccination Information",
-    yaxis=list(title="Count by Age"),
+    yaxis=list(title="Proportion"),
     xaxis=list(title=""),
     paper_bgcolor="azure",
     plot_bgcolor="white"

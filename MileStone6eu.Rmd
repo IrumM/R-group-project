@@ -1,0 +1,825 @@
+---
+title: "Milestone 6"
+author: "Irum Mehdi,Ruben Prado,Eunice Ndzerem Shang"
+date: "11/30/2020"
+output: html_document
+urlcolor: blue
+---
+
+
+
+#Project Aim   
+
+There is a continued need to improve immunization coverage rates.  Recent polls of adults suggest that as few as 50% of US adults are committed to receiving a COVID-19 vaccine, and misinformation and conspiracy theories about a vaccine abound. Prematurely approving a vaccine could undermine COVID-19 vaccination efforts and erode confidence in vaccines more generally (Bauchner et al., 2020). There is great concern given the flurry of public announcements from  sources  (such as the FDA, CDC, Pfizer, The White House etc.)  that have made several announcements  on soon to be vaccine COVID-19 availability. Alongside Operation Warp Speed, these announcements have  left  clinicians, public health  officials, and members of the public bewildered about what is happening and concerned that vaccines will be made available before safety and effectiveness are fully established.
+
+In this project we set out to understand population beliefs  about vaccines in general and the drivers that influence their decisions. We aimed at answering the following questions: How do knowledge and beliefs about vaccines vary by age,race SES, income,education, location. Does it matter who is telling me about vaccines (e.g., doctors vs internet. How does insurance coverage, type of doctor,predict vaccine acceptance.What are the charcteristics of vaccine hesitant groups.
+
+
+##Links to the data sets: 
+
++ [https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0198655] 
+
+
++ [https://www.openicpsr.org/openicpsr/project/120505/version/V1/view?path=/openicpsr/120505/fcr:versions/V1/Survey-Summary.xlsx&type=file]
+
+
+
+```{r,message=FALSE,echo=FALSE,strip.white=TRUE}
+library(readxl)
+library(tidyverse)
+library(ggthemes)
+library(ggplot2)
+library(ggpubr)
+library(plotly)
+library(lubridate)
+library(kableExtra)
+library(DT)
+
+```
+
+\newpage
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE,strip.white=TRUE}
+file_path <- ("./parent.xlsx")
+df <-readxl::read_excel(file_path) 
+df<-slice(df,2:n())
+df<-select(df,(1:39))
+```
+
+
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE,strip.white=TRUE}
+getRace <- function(white,asian,black,hispanic,aian,other)
+{
+  raceCount<-0
+  race<-"Other"
+  if(!is.na(white))
+  {
+    raceCount <- raceCount + 1
+    race <- "White"
+  }
+  
+  if(!is.na(asian))
+  {
+    raceCount = raceCount + 1
+    race <-"Asian"
+  }
+  if(!is.na(black))
+  {
+    raceCount = raceCount + 1
+    race <- "Black"
+  }  
+    if(!is.na(hispanic))
+  {
+    raceCount <- raceCount + 1
+    race <- "Hispanic"
+  }
+  
+  if(!is.na(aian))
+  {
+    raceCount = raceCount + 1
+    race <-"Aian"
+  }
+  if(!is.na(other))
+  {
+    raceCount = raceCount + 1
+    race <- "Other"
+  } 
+  if(raceCount > 1)
+  {
+    race <- "Mixed"
+  }
+  
+  race
+}
+
+getRaceV<-Vectorize(getRace)
+```
+
+
+
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE,strip.white=TRUE}
+
+df_1<-df %>% 
+  mutate(Race=getRaceV(White,Asian,Black,Hispanic,AIAN,Other))
+race_table<-table(df_1$Race)
+
+ df_2<- df_1 %>%
+  mutate(Insurance = case_when(
+          Insurance=="Yes, private insurance"~"Private",
+            Insurance=="Yes, public insurance"~"Public",
+          Insurance=="No"~"No Insurance",
+          TRUE~NA_character_))
+ # Variables of Interest  
+   df_3<-df_2 %>% 
+     select(Race,EverExempt,DocType,Insurance) 
+     
+df_5 <- df_3 %>% filter(!is.na(EverExempt))
+df_6 <- df_5 %>%  mutate(Exempt = ifelse(EverExempt==1,"Yes","No"))
+
+```
+
+
+
+
+
+
+\newpage
+###Insurance as Predictor of Vaccine Exemption
+
+Among exemptors,respondents with no insurance were more likely to have requested a non medical exemption.There are no significant differences between those holding Private and Public Insurance.
+```{r,echo=FALSE,message=FALSE,warning=FALSE,strip.white=TRUE}
+
+ df_7a<-df_6 %>%
+  select(Exempt,Insurance) %>% 
+  drop_na()
+
+df_7b<-df_7a %>% 
+  group_by(Insurance, Exempt) %>% 
+  summarise(n=n()) %>% 
+  mutate(pct=n/sum(n), lbl=scales::percent(pct))
+
+
+b<-ggplot(df_7b, aes(x = Insurance ,
+                     y = pct,
+                     fill = factor(Exempt, 
+                         levels = c("Yes", "No"),
+                         labels = c("Yes", "No")
+                         )
+                     )
+          ) 
+
+b<-b+geom_bar(stat = "identity", position = "fill") 
+
+b<-b+labs(y = "Percent", fill = "Exemption",
+       x = "Insurance",
+       title = "Exemption By Insurance")
+b<-b+scale_y_continuous(labels = scales::percent)
+b<-b+geom_text(aes(label = lbl), 
+            size = 3, 
+            position = position_stack(vjust = 0.5))
+b<-b+scale_fill_brewer(palette = "Set2")
+
+
+```
+ 
+\newpage
+###Race as Predictor of Vaccine Exemption
+A person's race did not predict getting a non medical exemption.
+There are no significant differences between races,peopl who identify as other race were significant minority among the total respondents.
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE,strip.white=TRUE}
+
+
+ df_8a<-df_6 %>%
+  select(Exempt,Race) %>% 
+  drop_na()
+
+df_8b<-df_8a %>% 
+  group_by(Race, Exempt) %>% 
+  summarise(n=n()) %>% 
+  mutate(pct=n/sum(n), lbl=scales::percent(pct))
+
+
+c<-ggplot(df_8b, aes(x = Race ,
+                     y = pct,
+                     fill = factor(Exempt, 
+                         levels = c("Yes", "No"),
+                         labels = c("Yes", "No")
+                         )
+                     )
+          ) 
+
+c<-c+geom_bar(stat = "identity", position = "fill") 
+
+c<-c+labs(y = "Percent", fill = "Exemption",
+       x = "Race",
+       title = "Exemption By Race")
+c<-c+scale_y_continuous(labels = scales::percent)
+c<-c+geom_text(aes(label = lbl), 
+            size = 3, 
+            position = position_stack(vjust = 0.5))
+c<-c+scale_fill_brewer(palette = "Set2")
+
+```
+
+\newpage
+
+###Type of Doctor as Predictor of Vaccine Exemption
+
+Respondents without a doctor and those who visited a Naturopath were
+more likely to request a non-medical exemption.
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE,strip.white=TRUE}
+
+ df_9a<-df_6 %>%
+  select(Exempt,DocType) %>% 
+  drop_na()
+
+df_9b<-df_9a %>% 
+  group_by(DocType,Exempt) %>% 
+  summarise(n=n()) %>% 
+  mutate(pct=n/sum(n), lbl=scales::percent(pct))
+
+
+
+d<-ggplot(df_9b, aes(x = DocType ,
+                     y = pct,
+                     fill = factor(Exempt, 
+                         levels = c("Yes", "No"),
+                         labels = c("Yes", "No")
+                         )
+                     )
+          ) 
+
+d<-d+geom_bar(stat = "identity", position = "fill") 
+
+d<-d+labs(y = "Percent", fill = "Exemption",
+       x = "Doctor Type",
+       title = "Exemption By Type of Doctor")
+d<-d+scale_y_continuous(labels = scales::percent)
+d<-d+geom_text(aes(label = lbl), 
+            size = 3, 
+            position = position_stack(vjust = 0.5))
+d<-d+scale_fill_brewer(palette = "Set2")
+
+
+```
+
+\newpage
+####Combined Plots
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE,strip.white=TRUE}
+ggarrange(b,c,d,labels=c("B","C","D"), ncol=1, nrow=3)
+```
+\newpage
+
+#### Respondent Characteristics by Vaccine Exemption Status    
+
+```{r,echo=FALSE,message=FALSE,warning=FALSE,strip.white=TRUE}
+
+library(DT)
+charc_vacc<- df_6 %>%
+  select(Exempt,Race,DocType,Insurance) %>%
+  drop_na() 
+
+datatable(charc_vacc,
+          options = list(
+            pageLength=5,
+            columnDefs=list(
+              list(className='dt-center',targets=1:3)
+            ),
+            dom = 'ltip'
+          ),
+          rownames=FALSE,
+          colnames=c("Exemption Status","Race","Type of Doctor","Insurance Status"),
+          filter=c("bottom"),
+          editable = F,
+          caption=" Respondent Charcteristics By Vaccine Exemption Status ") %>% 
+          formatStyle(1,color="blue",backgroundColor = styleEqual(c("Yes","No"),c('yellow','white'))) 
+
+  
+
+```
+
+#Trial
+#Reasons for Exemption 
+```{r,echo=FALSE}
+df_10a<-df_2 %>%
+ select(-c(25:31)) 
+ 
+df_10b <- df_10a %>% 
+    filter(!is.na(EverExempt))%>% 
+  mutate(EverExempt = ifelse(EverExempt==1,"Yes","No")) %>% 
+  mutate(ExemptReason=case_when(
+    ExemptReason=="I do not believe my child should get shots"~"Not believe in shots"  ,
+    ExemptReason=="I lost my child’s shot records"~"Lost Record",
+    ExemptReason=="I did not have time to go to the doctor to get updated shots"~"Time Constraint",
+  ))
+
+
+  
+df_10c<-df_10b %>% 
+  select(ExemptReason,EverExempt) %>% 
+  drop_na() %>% 
+  group_by(ExemptReason,EverExempt) %>% 
+  summarise(n=n()) %>% 
+  mutate(pct=n/sum(n), lbl=scales::percent(pct))
+
+  
+  
+e<-ggplot(df_10c, aes(x = ExemptReason ,
+                     y = pct,
+                     fill = factor(EverExempt, 
+                         levels = c("Yes", "No"),
+                         labels = c("Yes", "No")
+                         )
+                     )
+          ) 
+
+e<-e+geom_col(position = "fill") 
+
+e<-e+labs(y = "Percent", fill = "Exemption",
+       x = "ExemptReason",
+       title = "Exemption Reasons")
+e<-e+scale_y_continuous(labels = scales::percent)
+e<-e+geom_text(aes(label = lbl), 
+            size = 3, 
+            position = position_stack(vjust = 0.5))
+e<-e+scale_fill_brewer(palette = "Set2")
+
+e
+
+
+#Table of Exemptors and Non Exemptors beliefs
+#Everdelay,evernot get, will they allow a new infant to geta 
+#shot
+df_10d <- df_10a %>% 
+  mutate(EverDelay =case_when(EverDelay=="1"~"Yes",
+                              EverDelay=="0"~"No",
+                              EverDelay=="9"~"Dont Know")) %>% 
+  mutate(EverNotGet=case_when(EverNotGet==1~"Yes",
+                              EverNotGet==0~"No",
+                              EverNotGet==9~"Dont Know")) %>% 
+  mutate(NewAllShots=case_when(NewAllShots==1~"Yes",
+                               NewAllShots==0~"No",
+                               NewAllShots==9~"Dont Know") ) %>%       
+mutate(TooManyShots=case_when(
+  TooManyShots==1~"Strongly Disagree",
+  TooManyShots==2~"Disagree",
+   TooManyShots==3~"Not sure",
+    TooManyShots==4~"Agree",
+     TooManyShots==5~"Strongly Agree"
+  )) %>% 
+  mutate(PreventSevereIllness=case_when(
+   IllnessSevere==1~"Strongly Disagree",
+   IllnessSevere==2~"Disagree",
+    IllnessSevere==3~"Not sure",
+     IllnessSevere==4~"Agree",
+      IllnessSevere==5~"Strongly Agree",
+   TRUE~NA_character_
+   )) %>% 
+   mutate(NaturalImmunity=case_when(
+   NaturalImmunity==1~"Strongly Disagree",
+   NaturalImmunity==2~"Disagree",
+    NaturalImmunity==3~"Not sure",
+     NaturalImmunity==4~"Agree",
+      NaturalImmunity==5~"Strongly Agree",
+   TRUE~NA_character_
+   )) %>% 
+  mutate(FewerShotsSametime=case_when(
+   FewerShots==1~"Strongly Disagree",
+   FewerShots==2~"Disagree",
+    FewerShots==3~"Not sure",
+     FewerShots==4~"Agree",
+      FewerShots==5~"Strongly Agree",
+   TRUE~NA_character_
+   ))%>% 
+  mutate(TrustInfoAboutShots=case_when(
+   TrustInfo==1~"Strongly Disagree",
+   TrustInfo==2~"Disagree",
+    TrustInfo==3~"Not sure",
+     TrustInfo==4~"Agree",
+      TrustInfo==5~"Strongly Agree",
+   TRUE~NA_character_
+   ))%>% 
+  mutate(DiscussConcerns=case_when(
+   DiscussDoc==1~"Strongly Disagree",
+    DiscussDoc==2~"Disagree",
+     DiscussDoc==3~"Not sure",
+      DiscussDoc==4~"Agree",
+       DiscussDoc==5~"Strongly Agree",
+   TRUE~NA_character_
+   ))
+
+  #Question 7 in survey
+#Vaccine Beliefs
+
+df_10d<-df_10d %>% 
+  mutate(SeriousSideEffectConcern=case_when(
+  SeriousSE==1~"Not at all Concerend",
+  SeriousSE==2~"Not Concerned",
+   SeriousSE==3~"Not Sure",
+    SeriousSE==4~"Some what Concerned",
+     SeriousSE==5~"Extremely Concerned",
+  TRUE~NA_character_
+  )) %>% 
+  mutate(ShotsNotSafeConcern=case_when(
+  NotSafe==1~"Not at all Concerend",
+   NotSafe==2~"Not Concerned",
+    NotSafe==3~"Not Sure",
+     NotSafe==4~"Some what Concerned",
+      NotSafe==5~"Extremely Concerned",
+  TRUE~NA_character_
+  )) %>% 
+  mutate(ShotsNotPreventConcern=case_when(
+  NotPrevent==1~"Not at all Concerend",
+    NotPrevent==2~"Not Concerned",
+     NotPrevent==3~"Not Sure",
+      NotPrevent==4~"Some what Concerned",
+       NotPrevent==5~"Extremely Concerned",
+  TRUE~NA_character_
+  )) %>% 
+  mutate(EverExempt = ifelse(EverExempt==1,"Yes","No"))
+  
+df_10e<-df_10d %>%
+  select(EverExempt,
+        SeriousSideEffectConcern,
+         ShotsNotSafeConcern,ShotsNotPreventConcern,
+         ) %>% 
+  drop_na() %>% 
+  as.data.frame()
+
+df_experiment<-df_10e %>% 
+  group_by(EverExempt) %>%
+  count(SeriousSideEffectConcern) %>% 
+mutate(SeriousSideEffectConcern= round(n / sum(n) * 100,1))
+
+
+
+
+df_10f<-df_10e %>% 
+  group_by(EverExempt,ShotsNotSafeConcern) %>%
+  tally() %>% 
+mutate(percent = round(n / sum(n) * 100,1)) %>%
+	dplyr::select(-n) %>%
+	group_by(EverExempt) %>%
+	spread(ShotsNotSafeConcern, percent) 
+
+options(knitr.kable.NA = "--")
+k1<-kable(df_10f, 
+      booktabs=T,
+      align='lccc', 
+      caption="Concern Regarding Vaccine Safety") %>% 
+  kable_styling(full_width = F)
+
+
+
+
+#Concerns regarding Side Effects
+
+df_10g<-df_10e %>% 
+  group_by(EverExempt,SeriousSideEffectConcern) %>%
+  tally() %>% 
+mutate(percent = round(n / sum(n) * 100,1)) %>%
+	dplyr::select(-n) %>%
+	group_by(EverExempt) %>%
+	spread(SeriousSideEffectConcern, percent) 
+      
+
+k2<-kable(df_10g, 
+      booktabs=T,
+      align='lccc', 
+      caption="Concern Regarding Vaccine Side Effects") %>% 
+  kable_styling(full_width = F)
+
+#Concerns regarding Vaccine Prevention Capability
+
+df_10h<-df_10e %>% 
+  group_by(EverExempt,ShotsNotPreventConcern) %>%
+  tally() %>% 
+mutate(percent = round(n / sum(n) * 100,1)) %>%
+	dplyr::select(-n) %>%
+	group_by(EverExempt) %>%
+	spread(ShotsNotPreventConcern, percent) 
+
+k3<-kable(df_10h, 
+      booktabs=T,
+      align='lccc', 
+      caption="Concern Regarding Vaccine Preventing serious Diseases") %>% 
+  kable_styling(full_width = F)
+      
+
+
+```
+
+```{r echo=FALSE}
+k1  
+
+k2
+k3
+```
+
+  
+
+
+  
+
+
+	
+
+\newpage
+####SES,Age,Source of Information,Social Media in Vaccine Acceptance
+ 
+
+```{r,message=FALSE}
+Survey_Summary<-read_excel(("Survey_Summary.xlsx"))
+
+Survey_Summary <-slice(Survey_Summary,2:n())
+
+vac_bev_sm <- Survey_Summary %>%
+  select(6, 7, 8, 9, 10, 11,13,15, 16)
+
+vac_bev_sm <- rename(vac_bev_sm,
+Age = "What is your age?",Gender = "What is your gender?", 
+Continent = "Which continent do you live on?",
+Education = "What is the highest level of education you have completed?", 
+SES = "What socioeconomic class would you consider yourself/ your family?", 
+SM_preference = "Which form of social media do you use most?", 
+SM_Hrs_day = "In a typical day, how many hours do you spend on social media?",
+Influene_ofSM_Info = "Information about vaccines seen on social media has:",
+Most_trusted_with_Immunization_Info =
+  "Who do you trust most with immunization related information/ decisions?")
+
+vac_bev_USA <- vac_bev_sm %>% 
+  filter(Continent == "North America, United States"|
+           Continent == "North America, Other") %>%
+   mutate(Continent = case_when(
+     Continent %in% c("North America, United States") ~ "NA USA",
+     Continent %in% c("North America, Other") ~ "NA Other"))
+```
+
+\newpage
+
+```{r, message=FALSE, warning=FALSE,strip.white=TRUE}
+
+#table(vac_bev_USA$Education)
+vac_bev_USA <- vac_bev_USA %>%
+  mutate(Education = case_when(
+    Education %in% c("Associates Degree (2 year college/university degree)") ~ "AS",
+    Education %in% c("Elementary school (grade level 1-8)") ~ "Elem",
+    Education %in% c("Master's Degree") ~ "MD",
+    Education %in% c("Professional/Doctoral Degree (PhD, MD, DC etc..") ~ "DD",
+    Education %in% c("Bachelor Degree (4 year college/university degree)") ~ "BD",
+    Education %in% c("High school (grade level 9-12/13)") ~ "HS",
+    Education %in% c("No formal schooling") ~ "None",
+    TRUE ~ NA_character_))
+
+#table(vac_bev_USA$Influene_ofSM_Info)
+
+vac_bev_USA <- vac_bev_USA %>%
+  mutate(Influene_ofSM_Info = case_when(
+    Influene_ofSM_Info %in% c("I have not seen anything about vaccines on social media") ~ "No Info seen",
+    Influene_ofSM_Info %in% c("Influenced my opinion on vaccines (vaccines are better then I thought previously)") ~ "Positive",
+    Influene_ofSM_Info %in% c("Influenced my opinion on vaccines (vaccines are worse then I thought previously)") ~ "Negative",
+    Influene_ofSM_Info %in% c("NOT influenced my opinion on vaccines") ~ "None"))
+
+#table(vac_bev_USA$SES)
+vac_bev_USA$Age <-as.factor(vac_bev_USA$Age)
+```
+
+\newpage
+####Vaccine Beliefs
+By Education,SES,Social Media Influence Across Different Age Groups  
+
+```{r, message=FALSE, warning=FALSE}
+# How do knowledge and beliefs about vaccines vary by age, SES, education, location:
+ 
+vac_tab <- vac_bev_USA %>%
+  mutate(count= 1) %>%
+  select( Age,Education, SES,Influene_ofSM_Info, Most_trusted_with_Immunization_Info, count ) %>%
+  drop_na() %>%
+  group_by(Age,Education,SES,Influene_ofSM_Info) %>%
+  summarize( Count = n() ) 
+  data.frame()
+  
+  vac_bev_tablewide <- vac_tab %>%
+  pivot_wider(names_from = c(Age), values_from = Count) %>%
+  drop_na()
+ # Created a formatted table 
+  opts<-options(knitr.kable.NA="-")
+kable( vac_bev_tablewide,longtable=T,booktabs=T, col.names=c("Education Level","Social Economic Status", "Influence of SM","18-24","25-34", "35-44","45-54","55-64","65+")) %>%
+  #caption=" The “Anti-Vax” Movement - Social Media (SM) Influence on Knowledge and Trends of Vaccinations - North America, 2017-2018") %>%
+  kable_styling(full_width=F) %>%
+  kable_styling(position="left") %>%
+  kable_styling(font_size=10) %>%
+  add_header_above(c(" "=3,"Age Group Surveyed" =6))%>%
+  column_spec(1:3, bold=TRUE) %>%
+  column_spec(1:9, width="1cm") %>%
+  column_spec(3:9, color= if_else(vac_bev_tablewide$Influene_ofSM_Info=="Positive", "Red","green", "green"))%>%
+  pack_rows("Associate Degree",1,3)%>%
+  pack_rows("Bachelors Degree",4,7)%>%
+  pack_rows("High School Degree",8,10)%>%
+  pack_rows("Masters Degree",11,12)%>%
+  collapse_rows(columns=1, valign="top") %>%
+  footnote(
+  general="Benoit, Staci L. The “Anti-Vax” Movement: A Quantitative Report on Vaccine Beliefs and Knowledge across Social Media¿: Survey Summary.xlsx. Ann Arbor, MI: Inter-university Consortium for Political and Social Research [distributor], 2020-08-03. https://doi.org/10.3886/E120505V1-44300. ",
+  general_title="Reference and Data Source ")
+
+ 
+```
+
+####Proportions by Gender Surveyed
+```{r,message=FALSE,warning=FALSE}
+#Proportion of gender: count per category
+vac_bev_plot <- vac_bev_USA %>%
+  mutate(count= 1) %>%
+  select( Gender, count ) %>%
+  drop_na() %>%
+  group_by(Gender) %>%
+  summarize( num = n() ) 
+
+vac_bev_plot$total <- sum( vac_bev_plot$num)
+vac_bev_plot$prop <- vac_bev_plot$num / vac_bev_plot$total
+#sum ( vac_bev_plot$prop ) 
+
+vac_bev_plot <- vac_bev_plot %>%
+  mutate(Gender = factor(Gender,
+                         levels = Gender[order( num)]))
+
+vac_bev_plot$perc <- as.character(round(vac_bev_plot$prop, 3 ) * 100 )
+vac_bev_plot$lab <- paste(vac_bev_plot$num,
+                          paste( " (", vac_bev_plot$perc, "%", sep = ""),
+                          sep = "", ")")
+
+ggplot(vac_bev_plot, aes( x = Gender, y = prop ) ) +
+  geom_bar( stat = "identity", width = 0.3 ) +
+  coord_flip() +
+  ylim( 0 , 1 ) +
+  geom_text( aes( x = Gender, y = prop, label = lab ),
+             size = 3.5, vjust = .5, hjust = -.3 ) +
+  labs(x = "Gender",
+       y = "Proportion",
+       title = "Gender Proportion",
+       subtitle = "Proprotion by Gender surveyed") +
+  theme_solarized()
+
+```
+
+\newpage
+####Social Media Influence on Vaccination
+
+People between the ages of 25 and 54 and with Associate’s degree and higher were more likely to be influenced by social media platforms like Facebook. 
+
+```{r, message=FALSE, warning=FALSE}
+
+vac_bev_plot2 <- vac_bev_USA %>%
+  mutate(count= 1) %>%
+  select( Age, SM_preference, count ) %>%
+  drop_na() %>%
+  group_by(Age, SM_preference) %>%
+  summarize( num = n() ) 
+
+vac_bev_plot2$total <- sum( vac_bev_plot2$num)
+vac_bev_plot2$prop <- vac_bev_plot2$num / vac_bev_plot2$total
+#sum ( vac_bev_plot2$prop )
+
+
+plot_ly(
+  vac_bev_plot2,
+  x= ~SM_preference,
+  y= ~prop,
+  color= ~Age,
+  type="bar"
+) %>%
+  layout(title="Vaccination Trends by Scocial Media Influence, 2001-2018",
+    yaxis=list(title="Proportion by Age"),
+    xaxis=list(title="Social Media Preference"),
+    paper_bgcolor="azure",
+    plot_bgcolor="white"
+  )
+
+```
+
+#### Resources for Vaccination Information
+
+Doctors are the most trusted source of information regarding Vaccine Information
+
+```{r,message=FALSE,warning=FALSE}
+#Does it matter who is telling me about vaccines (e.g., doctors vs internet)?
+vac_bev_plot3 <- vac_bev_USA %>%
+  mutate(count= 1) %>%
+  select(Influene_ofSM_Info,Most_trusted_with_Immunization_Info, count ) %>%
+  drop_na() %>%
+  group_by(Influene_ofSM_Info, Most_trusted_with_Immunization_Info) %>%
+  summarize( Count = n() )
+
+
+vac_bev_plot3 <- vac_bev_plot3 %>%
+  mutate(Most_trusted_with_Immunization_Info = factor(Most_trusted_with_Immunization_Info,
+                         levels = Most_trusted_with_Immunization_Info[order( Count)]))
+
+vac_bev_plot3$total <- sum( vac_bev_plot3$Count)
+vac_bev_plot3$prop <- vac_bev_plot3$Count / vac_bev_plot3$total
+
+vac_bev_plot3$perc <- as.character(round(vac_bev_plot3$prop, 3 ) * 100 )
+  vac_bev_plot3$lab <- paste(vac_bev_plot3$Count,
+                          paste( " (", vac_bev_plot3$perc, "%", sep = ""),
+                          sep = "", ")")
+
+ plot_ly(
+   vac_bev_plot3,
+   x= ~Most_trusted_with_Immunization_Info,
+  y= ~prop,
+  color= ~Most_trusted_with_Immunization_Info,
+  type="bar"
+) %>%
+  layout(barmode="stack",
+           title="Resources most trusted with Vaccination Information",
+    yaxis=list(title="Proportion"),
+    xaxis=list(title=""),
+    paper_bgcolor="azure",
+    plot_bgcolor="white"
+  )
+
+```
+
+####Need for Immunization 
+
+Most of the survey participants understood that vaccines are needed to achieve herd immunity to protect people who cannot be vaccinated
+
+```{r,message=FALSE,warning=FALSE}
+vac_bev_all <- Survey_Summary %>%
+  select(7, 18, 19, 21, 22, 23, 26,28)
+
+ vac_bev_all <- rename(vac_bev_all,
+Gender = "What is your gender?",
+RareDz_No_vac_req = "Most diseases are so rare that they no longer require vaccination.",
+Herd_Immunity_needed = "Immunization of large portions of the population is needed in order to protect immunocompromised individuals (people who cannot receive vaccines).")
+
+ vac_bev_plot28 <- vac_bev_all %>%
+  mutate(count= 1) %>%
+  select(Gender, RareDz_No_vac_req,Herd_Immunity_needed,count ) %>%
+  drop_na()%>%
+  group_by( Gender, Herd_Immunity_needed) %>%
+  summarize( Count = n() )
+
+vac_bev_plot18 <- vac_bev_all %>%
+  mutate(count= 1) %>%
+  select(RareDz_No_vac_req,Herd_Immunity_needed,count ) %>%
+  drop_na()%>%
+  group_by(RareDz_No_vac_req) %>%
+  summarize( Count = n() )
+
+ggplot( vac_bev_plot28, aes(x=Herd_Immunity_needed,y=Count)) +
+  geom_bar(aes(fill="Count"), stat="identity")+
+  scale_y_continuous(labels = function(x) format(x,big.mark=",",scientific=FALSE)) +
+  scale_fill_manual(name="Herd Immunity Needed",values=c("coral","cyan2")) +
+  # scale_fill_manual(name="Answers",values=rainbow(2))
+  labs(x="",y="Population Count",title="Need to Immunize large populations",caption=" Protects people who cannot receive vaccines.") +
+  theme(legend.position="bottom")
+
+
+```
+\newpage
+
+
+#### Does Income Status Predict Vaccine Hesitany
+
+Vaccine hesistancy does not depend on income status. Vaccine hesitancy looks to be evenly distrubuted across the different Income levels.
+
+
+```{r,message=FALSE,warning=FALSE}
+vaccine_new <- select(df_1, c(TrustInfo, SeriousSE, NaturalImmunity,Hesitant, ExemptReason, Income, Educ))
+
+#vaccine_new <- vaccine_new[-1,]
+
+```
+```{r,fig.width=15}
+
+ses<- vaccine_new %>%
+  drop_na(Hesitant, Income)%>%
+  group_by(Hesitant, Income) %>%
+  summarise(Total= n())
+
+
+ses_graph<- ggplot(ses, aes(x=Hesitant,
+                            y=Total,
+                            fill= Income))
+ses_graph<-ses_graph+geom_bar(stat = "identity") 
+ses_graph <- ses_graph + labs(x= "Vaccine Hesitance", title= "Vaccine Hesitancy and Income")
+
+ses_graph
+```
+
+####SocioEconomic Characteristics with Hesitancy and Exempt Reasons
+```{r,message=FALSE,warning=FALSE}
+ses_table <- vaccine_new %>%
+  select(Hesitant,Income, Educ,ExemptReason) %>%
+  drop_na() 
+
+datatable(ses_table,
+          options = list(
+            columnDefs=list(
+              list(className='dt-center')
+            )
+          ),
+          rownames=FALSE,
+          colnames=c("Hesitant","Income","Education","Exempt Reason"),
+          caption=" Social Economic Status Characteristics with Hesitancy and Exempt Reasons")
+
+```
+
+
+
+
+
+
+
+#####References:
+1- Parental attitudes and perceptions associated with childhood vaccine exemptions in high-exemption schools. (n.d.). Retrieved November 29, 2020, from https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0198655
+
+2- Benoit, S. L. (2020). The “Anti-Vax” Movement: A Quantitative Report on Vaccine Beliefs and Knowledge across Social Media [Data set]. Inter-university Consortium for Political and Social Research (ICPSR). https://doi.org/10.3886/E120505V1
+
+
