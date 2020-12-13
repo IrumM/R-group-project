@@ -42,7 +42,7 @@ library(kableExtra)
 \newpage
 
 ```{r,echo=FALSE,message=FALSE,warning=FALSE,strip.white=TRUE}
-file_path <- ("/Users/irummehdi/Documents/DATA/parent.xlsx")
+file_path <- ("./parent.xlsx")
 df <-readxl::read_excel(file_path) 
 df<-slice(df,2:n())
 df<-select(df,(1:39))
