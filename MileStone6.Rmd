@@ -1,14 +1,11 @@
 ---
-title: "Milestone 4"
+title: "Milestone 6"
 author: "Irum Mehdi,Ruben Prado,Eunice Ndzerem Shang"
 date: "11/30/2020"
-output:
-  html_document:
-    df_print: paged
-  word_document: default
-  pdf_document: default
+output: html_document
 urlcolor: blue
 ---
+
 
 
 #Project Aim   
@@ -36,6 +33,7 @@ library(ggpubr)
 library(plotly)
 library(lubridate)
 library(kableExtra)
+library(DT)
 
 ```
 
@@ -448,12 +446,12 @@ mutate(percent = round(n / sum(n) * 100,1)) %>%
 	dplyr::select(-n) %>%
 	group_by(EverExempt) %>%
 	spread(ShotsNotSafeConcern, percent) 
-
 k1<-kable(df_10f, 
       booktabs=T,
       align='lccc', 
       caption="Concern Regarding Vaccine Safety") %>% 
   kable_styling(full_width = F)
+
 
 
 #Concerns regarding Side Effects
@@ -493,11 +491,14 @@ k3<-kable(df_10h,
 
 ```
 
-```{r,echo=FALSE}
+```{r echo=FALSE}
+options(knitr.kable.NA = '-')
+    
 k1
 k2
 k3
 ```
+
   
 
 
@@ -756,13 +757,12 @@ Vaccine hesistancy does not depend on income status. Vaccine hesitancy looks to 
 
 
 ```{r,message=FALSE,warning=FALSE}
-vaccine_new <- select(df_1, c(TrustInfo, SeriousSE, NaturalImmunity,
-                                 Hesitant, ExemptReason, Income, Educ))
+vaccine_new <- select(df_1, c(TrustInfo, SeriousSE, NaturalImmunity,Hesitant, ExemptReason, Income, Educ))
 
 #vaccine_new <- vaccine_new[-1,]
 
 ```
-```{r}
+```{r,fig.width=15}
 
 ses<- vaccine_new %>%
   drop_na(Hesitant, Income)%>%
@@ -793,7 +793,8 @@ datatable(ses_table,
           ),
           rownames=FALSE,
           colnames=c("Hesitant","Income","Education","Exempt Reason"),
-          caption=" Social Economic Status Characteristics with Hesitancy and Exempt Reasons") 
+          caption=" Social Economic Status Characteristics with Hesitancy and Exempt Reasons")
+
 ```
 
 
