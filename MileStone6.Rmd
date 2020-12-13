@@ -447,11 +447,14 @@ mutate(percent = round(n / sum(n) * 100,1)) %>%
 	dplyr::select(-n) %>%
 	group_by(EverExempt) %>%
 	spread(ShotsNotSafeConcern, percent) 
+
+options(knitr.kable.NA = "--")
 k1<-kable(df_10f, 
       booktabs=T,
       align='lccc', 
       caption="Concern Regarding Vaccine Safety") %>% 
   kable_styling(full_width = F)
+
 
 
 
@@ -493,9 +496,8 @@ k3<-kable(df_10h,
 ```
 
 ```{r echo=FALSE}
-options(knitr.kable.NA = '-')
-    
-k1
+k1  
+
 k2
 k3
 ```
