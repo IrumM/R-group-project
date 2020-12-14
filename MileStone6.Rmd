@@ -138,12 +138,13 @@ df_6 <- df_5 %>%  mutate(Exempt = ifelse(EverExempt==1,"Yes","No"))
 
 \newpage
 
-These visualizations are from data from a survey of parents in high exemption schools in Arizona.Here we looked at race,type of doctor,and type of insurance among survey takers to see if there are any differences among exemptors and non exemptors.
+These visualizations are from  the data from a survey of parents in high exemption schools in Arizona.Here we looked at race,gender,type of doctor,and type of insurance among survey takers to see if there are any differences among exemptors and non exemptors.
 
 \newpage
 
 ### Type of Insurance as Predictor of Vaccine Exemption
 Among parents who chose a non medical exemption in this survey,respondents with no insurance requested a non medical exemption with higher frequency.There are no significant differences  in relative frequencies between those holding Private and Public Insurance.
+
 ```{r,echo=FALSE,message=FALSE,warning=FALSE,strip.white=TRUE}
 
  df_7a<-df_6 %>%
@@ -264,7 +265,10 @@ d<-d+scale_fill_brewer(palette = "Set2")
 
 
 ### GenderAs Predictor
-```{r}
+
+There were no significant differences between the genders surveyed with regards to requesting a non medical exemption in this group of survey respondents.
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
 df_9c<-df_6 %>% 
   select(Exempt,Gender) %>% 
   drop_na()
@@ -313,13 +317,14 @@ ggarrange(b,c,d,e,labels=c("B","C","D","E"), ncol=1, nrow=4)
 \newpage
 
 #### Respondent Characteristics by Vaccine Exemption Status
+
 Below is a table of respondent characteristics in the table form.We have highlighted the exemptors in yellow.
 
 ```{r,echo=FALSE,message=FALSE,warning=FALSE,strip.white=TRUE}
 
 library(DT)
 charc_vacc<- df_6 %>%
-  select(Exempt,Race,DocType,Insurance) %>%
+  select(Exempt,Gender,Race,DocType,Insurance) %>%
   drop_na() 
 
 datatable(charc_vacc,
@@ -331,7 +336,7 @@ datatable(charc_vacc,
             dom = 'ltip'
           ),
           rownames=FALSE,
-          colnames=c("Exemption Status","Race","Type of Doctor","Insurance Status"),
+          colnames=c("Exemption Status","Gender","Race","Type of Doctor","Insurance Status"),
           filter=c("bottom"),
           editable = F,
           caption=" Respondent Charcteristics By Vaccine Exemption Status ") %>% 
@@ -341,7 +346,11 @@ datatable(charc_vacc,
 
 ```
 
-# Reasons for Exemption 
+\newpage
+####  Reasons for Exemption 
+The most common reason cited by the respondents was a lack of belief in vaccines.
+
+
 ```{r,echo=FALSE,figh.width=10,message=FALSE}
 df_10a<-df_2 %>%
  select(-c(25:31)) 
@@ -390,10 +399,10 @@ e
 ```
 
 
+
 ```{r,echo=FALSE,figh.width=10,message=FALSE}
 #Table of Exemptors and Non Exemptors beliefs
-#Everdelay,evernot get, will they allow a new infant to geta 
-#shot
+
 df_10d <- df_10a %>% 
   mutate(EverDelay =case_when(EverDelay=="1"~"Yes",
                               EverDelay=="0"~"No",
@@ -454,8 +463,11 @@ mutate(TooManyShots=case_when(
 ```
 
 
+\newpage
+### Vaccine Beliefs Among Survey Takers
+
 ```{r,echo=FALSE,figh.width=10,message=FALSE}
-#Question 7 in survey
+
 #Vaccine Beliefs
 
 df_10d<-df_10d %>% 
