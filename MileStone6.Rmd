@@ -881,6 +881,9 @@ datatable(ses_table,
 
 \newpage
 
+#### Discussion
+
+Across the different levels of vaccine hesitancy, income does not seem to be a factor. Income looks to be evenly distributed across the different levels of vaccine hesitancy,  Overall, 404 participants completed the survey. When we created a table looking at social economic status characteristics and vaccine hesitancy, only 93 participants answered all the corresponding questions. A majority of the participants did not answer the exempt reason question. After looking further into this, it may have been because participants were only given 3 options to choose from. There was no option for “other reason” for exemption. This may be an explanation to why the table includes only 25 percent of the participants. 
 
 ##### References:
 1- Parental attitudes and perceptions associated with childhood vaccine exemptions in high-exemption schools. (n.d.). Retrieved November 29, 2020, from https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0198655
